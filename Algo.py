@@ -24,6 +24,10 @@ df =  (df.assign(SR_match=round(100*df.sort_values(by=["ball"])
 
 ### Expanding Player Strike rate ###
 
+df1 = df.groupby(['match_key','batsman'])['b_runs'].expanding().mean().reset_index(drop=False).rename(columns={"b_runs" : "SR_Player", "level_2" : "Level"})
+df2 = df.merge(df1, left_on=['match_key','batsman','Unnamed: 0'], right_on=['match_key','batsman','Level']).drop(['Level'], axis=1)
+df2['SR_Player'] = round(df2['SR_Player'] * 100,2)
+
 
 
 ### Momentum Bonus ### 
@@ -38,15 +42,4 @@ df =  (df.assign(momentum_bonus=round(k*100*df.sort_values(by=["ball"])
 
 ###########################
 
-df1 =  (df1.assign(SR_player=round(100*df1.sort_values(by=["ball"], ascending=False)
-                                 .groupby(['batsman', 'match_key'])
-                                 .b_runs
-                                 .expanding()
-                                 .mean()
-                                 .reset_index(drop=True),2)))
 
-df1.head(10)
-df2 = df1.groupby(['match_key','batsman'])['b_runs'].expanding().mean().reset_index(drop=False)
-df2 = df2.rename(columns={"b_runs" : "SR_Player", "level_2" : "Level"})
-df3 = df1.merge(df2, left_on=['match_key','batsman','Unnamed: 0'], right_on=['match_key','batsman','Level'])
-df3.drop(['Level'], )
