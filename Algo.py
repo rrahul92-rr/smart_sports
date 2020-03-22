@@ -25,7 +25,7 @@ df2 = df.merge(df1, left_on=['match_key','batsman','Unnamed: 0'], right_on=['mat
 df2['SR_Player'] = round(df2['SR_Player'] * 100,2)
 
 
-### Strike rate bonus ###
+### Strike rate Bonus ###
 
 k1 = 0.25
 df2["SR_Bonus"] = (df2["SR_Player"] - df2["SR_Match"])*k1
@@ -42,6 +42,8 @@ df =  (df2.assign(Momentum_Bonus=round(k2*100*df2.sort_values(by=["ball"])
                                  .reset_index(drop=True),2)))
 df["Momentum_Bonus"] = df["Momentum_Bonus"].replace(np.NaN,0)
 
-###########################
+### Support Bonus ###
 
+k3 = 0.25
+df['Support_Bonus'] = df["b_runs"].apply(lambda x: 10*x*k3 if x<=3 else 0)
 
