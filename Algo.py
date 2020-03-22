@@ -5,17 +5,13 @@ from collections import OrderedDict
 
 os.chdir("/Users/basingse/Desktop/Sports fantasy/Data")
 print("current working directory :", os.getcwd())
-
 df = pd.read_csv('../Data/T20.csv')
 
 result = list(OrderedDict.fromkeys(list(df.match_key)))
 
-df1 = df[(df.team == "England") &  (df.batsman == "ME Trescothick")]
-
-
 ### Expanding Match Strike rate ###
 
-df =  (df.assign(SR_match=round(100*df.sort_values(by=["ball"])
+df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
                                  .groupby(['match_key','innings'])
                                  .total_runs
                                  .expanding()
@@ -29,16 +25,22 @@ df2 = df.merge(df1, left_on=['match_key','batsman','Unnamed: 0'], right_on=['mat
 df2['SR_Player'] = round(df2['SR_Player'] * 100,2)
 
 
+### Strike rate bonus ###
+
+k1 = 0.25
+df2["SR_Bonus"] = (df2["SR_Player"] - df2["SR_Match"])*k1
+
 
 ### Momentum Bonus ### 
 
-k = 0.25
-df =  (df.assign(momentum_bonus=round(k*100*df.sort_values(by=["ball"])
+k2 = 0.25
+df =  (df2.assign(Momentum_Bonus=round(k2*100*df2.sort_values(by=["ball"])
                                  .groupby(['match_key', 'innings'])
                                  .total_runs
                                  .rolling(3)
                                  .mean()
                                  .reset_index(drop=True),2)))
+df["Momentum_Bonus"] = df["Momentum_Bonus"].replace(np.NaN,0)
 
 ###########################
 
