@@ -46,11 +46,7 @@ df1 =  (df1.assign(SR_player=round(100*df1.sort_values(by=["ball"], ascending=Fa
                                  .reset_index(drop=True),2)))
 
 df1.head(10)
-df3.to_csv("test5.csv")
-df1.groupby(['match_key','batsman']).b_runs.expanding().median()
-
 df2 = df1.groupby(['match_key','batsman'])['b_runs'].expanding().mean().reset_index(drop=False)
-df2.rename(columns={"b_runs" : "SR_Player"})
-df3 = df1.merge(df2, left_on=['match_key','batsman','Unnamed: 0'], right_on=['match_key','batsman','level_2'])
-
-
+df2 = df2.rename(columns={"b_runs" : "SR_Player", "level_2" : "Level"})
+df3 = df1.merge(df2, left_on=['match_key','batsman','Unnamed: 0'], right_on=['match_key','batsman','Level'])
+df3.drop(['Level'], )
