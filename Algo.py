@@ -56,6 +56,14 @@ df['Performance_Score'] = df['b_runs'] + df['SR_Bonus'] + df['Momentum_Bonus'] +
 
 ### Performance Aggregation ###
 
-final_player_performance = df.groupby(['match_key','batsman']).agg({'Performance_Score' : ['sum','mean','median','max','min'], 'b_runs' : 'sum', "SR_Player", "SR_Innings"})
+final_player_performance = df.groupby(['match_key','batsman']).agg({'Performance_Score' : ['sum','mean','median','max','min'], 'b_runs' : 'sum', 'Index' : 'size' })
 
+
+### Defining a class for Batsman performance Algorithm ###
+
+class batsman_algo :
+    '''This class contains all the methods to generate batsman performance score'''
+    pass
+    
+                
 
