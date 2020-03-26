@@ -10,16 +10,21 @@ print("current working directory :", os.getcwd())
 df = pd.read_csv('../Data/T20.csv')
 df = df.rename(columns={"Unnamed: 0" : "Index"})
 
-### Expanding Match Strike rate ###
 
 class batsman_performance :
     '''This class contains all the methods to generate batsman performance score'''
 
+    def __init__(self, df, k1, k2, k3 )
+        self.df = df
+        self.k1 = k1
+        self.k2 = k2
+        self.k3 = k3
 
+##    k1 = strike rate factor
+##    k2 = momentum factor
+##    k3 = support factor
 
-
-    pass
-
+### Expanding Match Strike rate ###
 df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
                                  .groupby(['match_key','innings'])
                                  .total_runs
