@@ -14,68 +14,65 @@ df = df.rename(columns={"Unnamed: 0" : "Index"})
 class batsman_performance :
     '''This class contains all the methods to generate batsman performance score'''
 
-    def __init__(self, df, k1, k2, k3 )
+    def __init__(self, df, k1, k2, k3):
         self.df = df
         self.k1 = k1
         self.k2 = k2
         self.k3 = k3
 
-##    k1 = strike rate factor
-##    k2 = momentum factor
-##    k3 = support factor
+    def match_strike_rate (self):
+        self.df = self.df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
+        .groupby(['match_key','innings'])
+        .total_runs
+        .expanding()
+        .mean()
+        .reset_index(drop=True),2))
 
-### Expanding Match Strike rate ###
-df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
-                                 .groupby(['match_key','innings'])
-                                 .total_runs
-                                 .expanding()
-                                 .mean()
-                                 .reset_index(drop=True),2)))
+    def player_strike_rate(self):
+        df1 = self.df.groupby(['match_key','batsman'])['b_runs'].expanding().mean().reset_index(drop=False).rename(columns={"b_runs" : "SR_Player", "level_2" : "Level"})
+        self.df = self.df.merge(df1, left_on=['match_key','batsman','Index'], right_on=['match_key','batsman','Level']).drop(['Level'], axis=1)
+        self.df['SR_Player'] = round(self.df['SR_Player'] * 100,2)
+        
 
-### Expanding Player Strike rate ###
+    def strike_rate_bonus(self):
+        self.df["SR_Bonus"] = round((self.df["SR_Player"] - self.df["SR_Match"])*k1,2)
 
-df1 = df.groupby(['match_key','batsman'])['b_runs'].expanding().mean().reset_index(drop=False).rename(columns={"b_runs" : "SR_Player", "level_2" : "Level"})
-df2 = df.merge(df1, left_on=['match_key','batsman','Index'], right_on=['match_key','batsman','Level']).drop(['Level'], axis=1)
-df2['SR_Player'] = round(df2['SR_Player'] * 100,2)
+    def momentum_bonus(self):
+        self.df.assign(Momentum_Bonus=round(k2*100*self.df.sort_values(by=["ball"])
+        .groupby(['match_key', 'innings'])
+        .total_runs
+        .rolling(3)
+        .mean()
+        .reset_index(drop=True),2))["Momentum_Bonus"].replace(np.NaN,0)
 
-### Strike rate Bonus ###
+    def support_bonus(self):
+        self.df['Support_Bonus'] = self.df["b_runs"].apply(lambda x: 10 * x * k3 if x<=3 else 0)
 
-k1 = 0.25
-df2["SR_Bonus"] = round((df2["SR_Player"] - df2["SR_Match"])*k1,2)
+    def performance_score_per_ball(self):
+        self.df['Performance_Score'] = self.df['b_runs'] + self.df['SR_Bonus'] + self.df['Momentum_Bonus'] + self.df['Support_Bonus']
 
-### Momentum Bonus ### 
+    def perfromance_score_match(self, df):
+        return(self.df.groupby(['match_key','batsman']).agg({'Performance_Score' : ['sum','mean','median','max','min'], 'b_runs' : 'sum', 'Index' : 'size' }))
 
-k2 = 0.20
-df =  (df2.assign(Momentum_Bonus=round(k2*100*df2.sort_values(by=["ball"])
-                                 .groupby(['match_key', 'innings'])
-                                 .total_runs
-                                 .rolling(3)
-                                 .mean()
-                                 .reset_index(drop=True),2)))
-df["Momentum_Bonus"] = df["Momentum_Bonus"].replace(np.NaN,0)
+    def generate_score(self):
+        self.match_strike_rate()
+        self.player_strike_rate()
+        self.strike_rate_bonus()
+        self.momentum_bonus()
+        self.support_bonus()
+        self.performance_score_per_ball()
+        return(self.perfromance_score_match(self.df))
 
-### Support Bonus ###
+test1 = batsman_performance(df, 0.25,0.25,0.25)
 
-k3 = 0.25
-df['Support_Bonus'] = df["b_runs"].apply(lambda x: 10*x*k3 if x<=3 else 0)
+test1.match_strike_rate()
+test1.df
 
-### Partnership bonus ###
-
-
-### Ball-wise performance scores ###
-
-df['Performance_Score'] = df['b_runs'] + df['SR_Bonus'] + df['Momentum_Bonus'] + df['Support_Bonus']
-
-
-### Performance Aggregation ###
-
-final_player_performance = df.groupby(['match_key','batsman']).agg({'Performance_Score' : ['sum','mean','median','max','min'], 'b_runs' : 'sum', 'Index' : 'size' })
-
-
-### Defining a class for Batsman performance Algorithm ###
-
-final_player_performance.to_csv("final_player_performance.csv")
+test2 = batsman_performance(df, 0.25, 0.25, 0.25)
+test2.generate_score()
 
 
 
-
+##    k1 = Strike rate factor
+##    k2 = Momentum factor
+##    k3 = Support factor
