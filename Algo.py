@@ -12,14 +12,6 @@ df = df.rename(columns={"Unnamed: 0" : "Index"})
 
 ### Expanding Match Strike rate ###
 
-class batsman_performance :
-    '''This class contains all the methods to generate batsman performance score'''
-
-
-
-
-    pass
-
 df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
                                  .groupby(['match_key','innings'])
                                  .total_runs
