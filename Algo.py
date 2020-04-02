@@ -25,6 +25,13 @@ df1 = df.groupby(['match_key','batsman'])['b_runs'].expanding().mean().reset_ind
 df2 = df.merge(df1, left_on=['match_key','batsman','Index'], right_on=['match_key','batsman','Level']).drop(['Level'], axis=1)
 df2['SR_Player'] = round(df2['SR_Player'] * 100,2)
 
+df.loc[df['extras'] > 0, 'b_runs_without_extras'] = np.nan
+df.loc[df['extras'] == 0, 'b_runs_without_extras'] = df['b_runs']
+df1 = df.groupby(['match_key','batsman'])['b_runs_without_extras'].expanding(min_periods=1).mean().reset_index(drop=False).rename(columns={"b_runs_without_extras" : "SR_Player", "level_2" : "Level"})
+df2 = df.merge(df1, left_on=['match_key','batsman','Index'], right_on=['match_key','batsman','Level']).drop(['Level'], axis=1)
+df2['SR_Player'] = round(df2['SR_Player'] * 100,2)
+df2[df2.match_key == 211028]
+df2.to_csv("test1.csv")
 ### Strike rate Bonus ###
 
 k1 = 0.25
