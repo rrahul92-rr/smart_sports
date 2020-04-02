@@ -23,15 +23,22 @@ class batsman_performance:
 		self.k3 = k3
 
 	def momentum_bonus(self):
-		self.df = self.df.assign(Momentum_Bonus=round(100*self.k2* self.df.sort_values(by=["ball"]).groupby(['match_key', 'innings']).total_runs.rolling(3).mean().reset_index(drop=True),2).replace(np.NaN,0))
+		self.df = self.df.assign(Momentum_Bonus=round(100*self.k2 * self.df
+                                                .sort_values(by=["ball"])
+                                                .groupby(['match_key', 'innings'])
+                                                .total_runs
+                                                .rolling(3)
+                                                .mean()
+                                                .reset_index(drop=True),2)
+                           						.replace(np.NaN,0))
 
 	def match_strike_rate(self):
 		self.df = self.df.assign(SR_Match=round(100*self.df.sort_values(by=["ball"])
-		.groupby(['match_key','innings'])
-		.total_runs
-		.expanding()
-		.mean()
-		.reset_index(drop=True),2))
+										.groupby(['match_key','innings'])
+										.total_runs
+										.expanding()
+										.mean()
+										.reset_index(drop=True),2))
 
 	def player_strike_rate(self):
 		df1 = self.df.groupby(['match_key','batsman'])['b_runs'].expanding().mean().reset_index(drop=False).rename(columns={"b_runs" : "SR_Player", "level_2" : "Level"})
@@ -64,6 +71,5 @@ class batsman_performance:
 obj1 = batsman_performance(df)
 df_output = obj1.generate_score()
 print(df_output)
-
-
+print(obj1.df)
 
