@@ -66,10 +66,23 @@ df['Performance_Score'] = df['b_runs'] + df['SR_Bonus'] + df['Momentum_Bonus'] +
 final_player_performance = df.groupby(['match_key','batsman']).agg({'Performance_Score' : ['sum','mean','median','max','min'], 'b_runs' : 'sum', 'Index' : 'size' })
 
 
-### Defining a class for Batsman performance Algorithm ###
+df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
+                                 .groupby(['match_key','innings'])
+                                 .total_runs
+                                 .expanding()
+                                 .mean()
+                                 .reset_index(drop=True),2)))
 
-final_player_performance.to_csv("final_player_performance.csv")
+df1 = df[(df['wicket'] == 1) & (df['kind'].isin(['caught', 'bowled', 'lbw', 'stumped', 'hit wicket']))]
+df1 = df1.assign(wicket_rank=df1.groupby(['match_key', 'innings'])['ball'].rank(ascending=True)).filter(['match_key','ball','innings','wicket_rank', 'Index'])
+df2 = df.merge(df1, on = ['Index','match_key', 'ball', 'innings'], how = 'left', indicator=False).replace(np.NaN,0)
 
 
 
+df2['base_points'] = np.where(np.logical_and(df2['wicket_rank'] != 0, df2['ball'] < 15.0) , (44 - df2['wicket_rank']*4), (33 - df2['wicket_rank']*3))
+df2.loc[df2['wicket_rank'] == 0, 'base_points'] = 0
 
+
+df2 = df2[df2['match_key'] == 211028]
+
+df2.to_csv("test_wicket_rank.csv")
