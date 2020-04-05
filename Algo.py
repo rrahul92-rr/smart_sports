@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math as math
 import os
 from collections import OrderedDict
 
@@ -73,16 +74,51 @@ df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
                                  .mean()
                                  .reset_index(drop=True),2)))
 
+
+### Bowler base points ###
+
 df1 = df[(df['wicket'] == 1) & (df['kind'].isin(['caught', 'bowled', 'lbw', 'stumped', 'hit wicket']))]
 df1 = df1.assign(wicket_rank=df1.groupby(['match_key', 'innings'])['ball'].rank(ascending=True)).filter(['match_key','ball','innings','wicket_rank', 'Index'])
 df2 = df.merge(df1, on = ['Index','match_key', 'ball', 'innings'], how = 'left', indicator=False).replace(np.NaN,0)
-
-
 
 df2['base_points'] = np.where(np.logical_and(df2['wicket_rank'] != 0, df2['ball'] < 15.0) , (44 - df2['wicket_rank']*4), (33 - df2['wicket_rank']*3))
 df2.loc[df2['wicket_rank'] == 0, 'base_points'] = 0
 
 
-df2 = df2[df2['match_key'] == 211028]
 
-df2.to_csv("test_wicket_rank.csv")
+### ER bonus ###
+
+## Overs ##
+
+df['overs_match'] = df['ball'].apply(lambda x: round(math.modf(x)[1] + (5*math.modf(x)[0])/3 , 2))
+df['flag'] = 1
+df1 = df.groupby(['match_key', 'bowler'])['flag'].expanding().sum().reset_index(drop=False).rename(columns={'flag' : 'overs_bowler', 'level_2' : 'Level'})
+df2 = df.merge(df1, left_on=['match_key', 'bowler', 'Index'], right_on=['match_key', 'bowler', 'Level']).drop(['Level','flag'],axis=1)
+df2['overs_bowler'] = df2['overs_bowler'].apply(lambda x: round(x/6,2))
+
+
+## Runs ##
+
+df2['innings_runs_conceded'] = np.where(np.logical_or(df2['legbyes'] > 0, df2['byes'] > 0), 0,df2['total_runs'])
+df2 = (df2.assign(cumulative_runs_match=df2.groupby(['match_key','innings'])
+                                         .innings_runs_conceded
+                                         .expanding()
+                                         .sum()
+                                         .reset_index(drop=True)))
+df3 = df2.groupby(['match_key', 'bowler'])['innings_runs_conceded'].expanding().sum().reset_index(drop=False).rename(columns={'innings_runs_conceded' : 'cumulative_runs_bowler', 'level_2' : 'Level'})
+df4 = df2.merge(df3, left_on=['match_key', 'bowler', 'Index'], right_on=['match_key', 'bowler', 'Level']).drop(['Level'],axis=1)
+
+## Bonus Calculation ##
+
+df4['ER_Match'] = round(df4['cumulative_runs_match']/df4['overs_match'],2)
+df4['ER_Player'] = round(df4['cumulative_runs_bowler']/df4['overs_bowler'],2)
+k1 = 10
+df4['ER_Bonus'] = k1 * round((df4['ER_Match'] - df4['ER_Player']) * df4['overs_bowler'],2)
+ 
+
+### Momentum Bonus ###
+
+
+
+df4 = df4[df4['match_key'] == 211028]
+df4.to_csv("test_overs_player.csv")
