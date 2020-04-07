@@ -122,7 +122,7 @@ class bowler_performance:
 	def momentum_bonus_bowler(self):
 		self.df['over'] = self.df['ball'].apply(lambda x: math.floor(x))
 		df2 = self.df[self.df['wicket'] == 1]
-		df2 = (df2.assign(momentum_bonus_bowler=df2.groupby(['match_key', 'bowler','over'])['Base_Points'].shift()))
+		df2 = (df2.assign(Momentum_Bonus_Bowler=df2.groupby(['match_key', 'bowler','over'])['Base_Points'].shift()))
 		df2['Momentum_Bonus_Bowler'] = df2['Momentum_Bonus_Bowler'] * 0.5
 		df2 = df2[['match_key', 'bowler', 'Index', 'Momentum_Bonus_Bowler']]
 		self.df = self.df.merge(df2, on=['match_key', 'bowler', 'Index'], how= 'outer', indicator = False).replace(np.NaN,0)
@@ -144,6 +144,6 @@ class bowler_performance:
 		return(df)
 
 obj2 = bowler_performance(df)
-df_output = obj2.generate_bowler_score()
-print(df_output)
-print(obj1.df)
+df_output2 = obj2.generate_bowler_score()
+print(df_output2)
+print(obj2.df)
