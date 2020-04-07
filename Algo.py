@@ -74,6 +74,7 @@ df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
                                  .mean()
                                  .reset_index(drop=True),2)))
 
+###############################################################################################################################################################
 
 ### Bowler base points ###
 
@@ -118,12 +119,12 @@ df4['ER_Bonus'] = k1 * round((df4['ER_Match'] - df4['ER_Player']) * df4['overs_b
 
 ### Momentum Bonus ###
 
-df4['over'] = round(df['ball'])
-groups = df4.groupby(['match_key', 'bowler', 'over'])    
-
-for name,group in groups:
-    group['batsman']
-
-
+df2['over'] = df2['ball'].apply(lambda x: math.floor(x))
+df3 = df2[df2['wicket'] == 1]
+df3 = (df3.assign(momentum_bonus_bowler=df3.groupby(['match_key', 'bowler','over'])['base_points'].shift()))
+df3['momentum_bonus_bowler'] = df3['momentum_bonus_bowler'] * 0.5
+df3 = df3[['match_key', 'bowler', 'Index', 'momentum_bonus_bowler']]
+df4 = df2.merge(df3, on=['match_key', 'bowler', 'Index'], how= 'outer', indicator = False).replace(np.NaN,0)
 df4 = df4[df4['match_key'] == 211028]
 df4.to_csv("test_overs_player.csv")
+
