@@ -118,6 +118,11 @@ df4['ER_Bonus'] = k1 * round((df4['ER_Match'] - df4['ER_Player']) * df4['overs_b
 
 ### Momentum Bonus ###
 
+df4['over'] = round(df['ball'])
+groups = df4.groupby(['match_key', 'bowler', 'over'])    
+
+for name,group in groups:
+    group['batsman']
 
 
 df4 = df4[df4['match_key'] == 211028]
