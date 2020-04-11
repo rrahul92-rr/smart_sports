@@ -78,8 +78,8 @@ class batsman_performance:
 
 obj1 = batsman_performance(df)
 df_output = obj1.generate_batsman_score()
-print(df_output)
-print(obj1.df)
+df_output.to_csv('Batsman_performance_match.csv')
+obj1.df.to_csv('Batsman_performance_ball_wise.csv')
 
 
 class bowler_performance:
@@ -91,10 +91,12 @@ class bowler_performance:
 		self.k1 = k1
   
 	def base_points(self):
-		df1 = self.df[(self.df['wicket'] == 1) & (self.df['kind'].isin(['caught', 'bowled', 'lbw', 'stumped', 'hit wicket']))]
+		df1 = self.df[self.df['wicket'] == 1]
 		df1 = df1.assign(wicket_rank=df1.groupby(['match_key', 'innings'])['ball'].rank(ascending=True)).filter(['match_key','ball','innings','wicket_rank', 'Index'])
 		self.df = self.df.merge(df1, on = ['Index','match_key', 'ball', 'innings'], how = 'left', indicator=False).replace(np.NaN,0)
 		self.df['Base_Points'] = np.where(np.logical_and(self.df['wicket_rank'] != 0, self.df['ball'] < 15.0) , (44 - self.df['wicket_rank']*4), (33 - self.df['wicket_rank']*3))
+		self.df.loc[self.df['wicket_rank'] == 0, 'Base_Points'] = 0
+		self.df['Bowler_Base_Points'] = np.where(self.df['kind'].isin(['caught', 'caught and bowled', 'bowled', 'lbw', 'stumped', 'hit wicket']),self.df['Base_Points'],0)
 		self.df.loc[self.df['wicket_rank'] == 0, 'Base_Points'] = 0
 
 	def overs_bowled(self):
@@ -121,14 +123,14 @@ class bowler_performance:
   
 	def momentum_bonus_bowler(self):
 		self.df['over'] = self.df['ball'].apply(lambda x: math.floor(x))
-		df2 = self.df[self.df['wicket'] == 1]
+		df2 = self.df[(self.df['wicket'] == 1) & (self.df['kind'].isin(['caught', 'caught and bowled', 'bowled', 'lbw', 'stumped', 'hit wicket']))]
 		df2 = (df2.assign(Momentum_Bonus_Bowler=df2.groupby(['match_key', 'bowler','over'])['Base_Points'].shift()))
 		df2['Momentum_Bonus_Bowler'] = df2['Momentum_Bonus_Bowler'] * 0.5
 		df2 = df2[['match_key', 'bowler', 'Index', 'Momentum_Bonus_Bowler']]
 		self.df = self.df.merge(df2, on=['match_key', 'bowler', 'Index'], how= 'outer', indicator = False).replace(np.NaN,0)
   
 	def performance_score_per_ball(self):
-		self.df['Performance_Score_Bowler'] = self.df['Base_Points'] + self.df['ER_Bonus'] + self.df['Momentum_Bonus_Bowler']
+		self.df['Performance_Score_Bowler'] = self.df['Bowler_Base_Points'] + self.df['ER_Bonus'] + self.df['Momentum_Bonus_Bowler']
   
 	def performance_score_bowler(self):
 		return(self.df.groupby(['match_key', 'bowler']).agg({'Performance_Score_Bowler' : ['sum','mean','median','max','min']}))
@@ -145,5 +147,37 @@ class bowler_performance:
 
 obj2 = bowler_performance(df)
 df_output2 = obj2.generate_bowler_score()
-print(df_output2)
-print(obj2.df)
+df_output2.to_csv('Bowler_performance_match.csv')
+obj2.df.to_csv('Bowler_performance_ball_wise.csv')
+
+
+class fielding_performance:
+	'''This class includes all the methods to generate fielding performance score'''
+
+	def __init__(self, df):
+		self.df = df
+
+	def base_points(self):
+		df1 = self.df[self.df['wicket'] == 1]
+		df1 = df1.assign(wicket_rank=df1.groupby(['match_key', 'innings'])['ball'].rank(ascending=True)).filter(['match_key','ball','innings','wicket_rank', 'Index'])
+		self.df = self.df.merge(df1, on = ['Index','match_key', 'ball', 'innings'], how = 'left', indicator=False).replace(np.NaN,0)
+		self.df['Base_Points'] = np.where(np.logical_and(self.df['wicket_rank'] != 0, self.df['ball'] < 15.0) , (44 - self.df['wicket_rank']*4), (33 - self.df['wicket_rank']*3))
+		self.df.loc[self.df['wicket_rank'] == 0, 'Base_Points'] = 0
+		self.df['Fielding_Base_Points'] = np.where(self.df['kind'].isin(['caught', 'caught and bowled', 'stumped']),self.df['Base_Points']*0.25,0)
+		self.df['Fielding_Base_Points'] = np.where(self.df['kind'].isin(['run out']),self.df['Base_Points'],0)
+		self.df.loc[self.df['wicket_rank'] == 0, 'Base_Points'] = 0
+				
+	def performance_score_fielding(self):
+		return(self.df.groupby(['match_key', 'fielders']).agg({'Fielding_Base_Points' : ['sum', 'mean', 'median', 'min', 'max']}))
+
+	def generate_fielding_score(self):
+		self.base_points()
+		df = self.performance_score_fielding()
+		return(df)
+
+
+obj3 = fielding_performance(df)
+df_output3 = obj3.generate_fielding_score()
+df_output3.to_csv('Fielding_performace_match.csv')
+obj3.df.to_csv('Fielding_performance_ball_wise.csv')
+

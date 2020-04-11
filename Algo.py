@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
 import math as math
+import sys
 import os
 from collections import OrderedDict
 
+sys.setrecursionlimit(2500)
 
 os.chdir("/Users/basingse/Desktop/Sports fantasy/Data")
 print("current working directory :", os.getcwd())
@@ -78,10 +80,9 @@ df =  (df.assign(SR_Match=round(100*df.sort_values(by=["ball"])
 
 ### Bowler base points ###
 
-df1 = df[(df['wicket'] == 1) & (df['kind'].isin(['caught', 'bowled', 'lbw', 'stumped', 'hit wicket']))]
+df1 = df[(df['wicket'] == 1)]
 df1 = df1.assign(wicket_rank=df1.groupby(['match_key', 'innings'])['ball'].rank(ascending=True)).filter(['match_key','ball','innings','wicket_rank', 'Index'])
 df2 = df.merge(df1, on = ['Index','match_key', 'ball', 'innings'], how = 'left', indicator=False).replace(np.NaN,0)
-
 df2['base_points'] = np.where(np.logical_and(df2['wicket_rank'] != 0, df2['ball'] < 15.0) , (44 - df2['wicket_rank']*4), (33 - df2['wicket_rank']*3))
 df2.loc[df2['wicket_rank'] == 0, 'base_points'] = 0
 
@@ -127,4 +128,5 @@ df3 = df3[['match_key', 'bowler', 'Index', 'momentum_bonus_bowler']]
 df4 = df2.merge(df3, on=['match_key', 'bowler', 'Index'], how= 'outer', indicator = False).replace(np.NaN,0)
 df4 = df4[df4['match_key'] == 211028]
 df4.to_csv("test_overs_player.csv")
+
 
