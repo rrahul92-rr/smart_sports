@@ -1,2 +1,2 @@
 # smart_sports
-Repository to share sports fantasy related code
+The Cricket Fantasy Sports scorer scores Batsman, Bowler and Fielder performances using a novel statistical approach.
